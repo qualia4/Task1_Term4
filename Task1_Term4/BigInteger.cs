@@ -3,7 +3,7 @@ namespace Task5_Term4;
 public class BigInteger
 {
     private int[] _numbers;
-    private bool positive = true;
+    private bool positive { get; } = true;
 
     public BigInteger(string value)
     {
@@ -35,12 +35,18 @@ public class BigInteger
 
     public BigInteger Add(BigInteger another)
     {
-        string result = "";
-        string firstNum = "";
-        for (int i = 0; i < _numbers.Length; i++)
+        if (positive && !another.positive)
+            return this.Sub(new BigInteger(another.ToString().Remove(0, 1)));
+        if (!positive && another.positive)
+            return another.Sub(new BigInteger(this.ToString().Remove(0, 1)));
+        if (!positive && !another.positive)
         {
-            firstNum = firstNum + (char)_numbers[i];
+            BigInteger modAnother = new BigInteger(another.ToString().Remove(0, 1));
+            BigInteger modFirst = new BigInteger(this.ToString().Remove(0, 1));
+            return new BigInteger("-" + modFirst.Add(modAnother).ToString());
         }
+        string result = "";
+        string firstNum = this.ToString();
         string secNum = another.ToString();
         if (firstNum.Length > secNum.Length)
         {
@@ -96,6 +102,86 @@ public class BigInteger
     }
 
 
+
+    public BigInteger Sub(BigInteger another)
+    {
+        if (positive && !another.positive)
+            return this.Add(new BigInteger(another.ToString().Remove(0, 1)));
+        if (!positive && another.positive)
+            return new BigInteger("-" + another.Add(new BigInteger(this.ToString().Remove(0, 1))));
+        if (!positive && !another.positive)
+        {
+            BigInteger modAnother = new BigInteger(another.ToString().Remove(0, 1));
+            BigInteger modFirst = new BigInteger(this.ToString().Remove(0, 1));
+            return modAnother.Sub(modFirst);
+        }
+
+        string result = "";
+        string firstNum;
+        string secNum;
+        bool negative = false;
+        if (findBigger(this.ToString(), another.ToString()) == this.ToString())
+        {
+            firstNum = this.ToString();
+            secNum = another.ToString();
+        }
+        else
+        {
+            negative = true;
+            firstNum = another.ToString();
+            secNum = this.ToString();
+        }
+        if (firstNum.Length > secNum.Length)
+        {
+            int difference = firstNum.Length - secNum.Length;
+            for (int i = 0; i < difference; i++)
+            {
+                secNum = "0" + secNum;
+            }
+        }
+        bool toTake = false;
+        for (int i = secNum.Length - 1; i >= 0; i--)
+        {
+            int takeIndex = i;
+            while (toTake)
+            {
+                if (firstNum[takeIndex] - '0' >= 1)
+                {
+                    int newDigit = firstNum[takeIndex] - '0' - 1;
+                    firstNum = replaceByIndex(firstNum, takeIndex, Convert.ToChar(newDigit.ToString()));
+                    toTake = false;
+                }
+                else
+                {
+                    firstNum = replaceByIndex(firstNum, takeIndex, '9');
+                    takeIndex--;
+                }
+            }
+            int diff;
+            if (firstNum[i] - '0' >= secNum[i] - '0')
+            {
+                diff = (firstNum[i] - '0') - (secNum[i] - '0');
+                result = diff.ToString() + result;
+            }
+            else
+            {
+                toTake = true;
+                string modifiedFirst = "1" + firstNum[i];
+                diff = Int32.Parse(modifiedFirst) - (secNum[i] - '0');
+                result = diff.ToString() + result;
+            }
+        }
+
+        while (result[0] == '0')
+        {
+            result = result.Remove(0, 1);
+        }
+        return negative ? new BigInteger("-" + result) : new BigInteger(result);
+    }
+
+
+
+
     public string replaceByIndex(string str, int index, char symbol)
     {
         string result = "";
@@ -112,4 +198,24 @@ public class BigInteger
         }
         return result;
     }
+
+    public string findBigger(string num1, string num2)
+    {
+        if (num1.Length > num2.Length)
+            return num1;
+        else if (num2.Length > num1.Length)
+            return num2;
+        else
+        {
+            for (int i = 0; i < num1.Length; i++)
+            {
+                if (num1[i] - '0' > num2[i] - '0')
+                    return num1;
+            }
+        }
+        return num2;
+    }
+
+    public static BigInteger operator +(BigInteger a, BigInteger b) => a.Add(b);
+    public static BigInteger operator -(BigInteger a, BigInteger b) => a.Sub(b);
 }
